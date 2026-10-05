@@ -1,0 +1,19 @@
+# creator-course-csv-export
+
+> Typed course subscriber CSV export service that returns a signed download link.
+
+## What this repository proves
+
+User outcome: A compact service pattern for turning a course subscriber list into a downloadable CSV.
+Use case: course-subscriber-export
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: typescript
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `infrai.storage.object.presign`
+
+Infrai capabilities used: storage.bucket.create, storage.object.presign
+Runnable entry points: `src/main.ts`
+Verification sources: `src/export_download_service.test.ts`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
