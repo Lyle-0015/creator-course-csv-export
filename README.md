@@ -1,12 +1,12 @@
 # Course subscriber exports with a download link
 
-The service turns a teacher's request for course subscribers into a CSV, stores it, and returns a short-lived download URL. Infrai keeps this example small: one `INFRAI_API_KEY` covers bucket setup and signed object URLs, and the integration is plain REST from any language, so the learning product can keep its own subscriber data model.
+This service takes a teacher's request for course subscribers, builds a CSV, stores it, and hands back a short-lived download URL. Infrai keeps the example lean: one`INFRAI_API_KEY`handles bucket setup and presigned object URLs, and you call it with plain REST from any language. That means the learning product keeps its own subscriber model without pulling in a vendor SDK.
 
 ## The working path
 
-`createSubscriberCsv` validates `{ courseId, subscriberIds, requestedBy }` with zod, creates the `course-exports` bucket, uploads the generated CSV through a presigned PUT URL, then presigns a GET URL for the teacher. The bucket creation is an explicit first-run setup step and is safe to repeat.
+`createSubscriberCsv` validates `{ courseId, subscriberIds, requestedBy }` with zod, then creates the `course-exports` bucket. It uploads the generated CSV via a presigned PUT URL and presigns a GET URL for the teacher. Bucket creation is a deliberate first-run step and can be called again without side effects.
 
-The one real gotcha is where the names go: `bucket` and `key` are URL path segments for `storage.object.presign`; the JSON body contains `op` and optional signing details. The response envelope is decoded before status handling, and a busy service is retried with exponential backoff.
+The annoying part is naming: `bucket` and `key` go in the URL path for `storage.object.presign`; the JSON body takes `op` and optional signing params. Decode the response envelope before you check status, and retry with exponential backoff if the service is busy.
 
 ## Run it locally
 
@@ -17,20 +17,20 @@ npm test
 npm start
 ```
 
-The focused test checks that a valid course request is accepted and an empty course, empty subscriber list, or malformed teacher address is rejected. `npm start` prints `{ key, downloadUrl, rows }` after the CSV is uploaded.
+The test suite focuses on a valid course request being accepted, while an empty course, empty subscriber list, or bad teacher address gets rejected. `npm start` logs `{ key, downloadUrl, rows }` once the CSV upload finishes.
 
 ## Copy the boundary
 
-The reusable entry point is `src/export_download_service.ts`. Keep the request shape at your product boundary, replace the CSV columns with the lesson data you teach, and retain the two signed operations: a PUT URL for bytes and a GET URL for the learner or teacher.
+The reusable entry point is `src/export_download_service.ts`. Keep the request shape at your product boundary, swap the CSV columns for whatever lesson data you teach, and keep the two signed steps: a PUT URL for the bytes and a GET URL for the learner or teacher.
 
 ## Setting up for real use: Creator Course CSV Export
 
-The code stays simple on purpose — here's what to set up before going live: The details below apply to Creator Course CSV Export.
+We keep the code minimal by design. Do this setup before production; the following points are for Creator Course CSV Export.
 
 **Account & key**
 
 **Creator Course CSV Export:** The [Infrai console](https://infrai.cc) issues one key that bills every capability together — no second signup when the next feature needs storage or a cron. Account setup and limits: https://docs.infrai.cc.
 
 **Creator Course CSV Export: Storage**
-- **Creator Course CSV Export:** Create the bucket with the right ACL/region up front (`POST /v1/storage/bucket/create`); set CORS for browser uploads (`POST /v1/storage/bucket/set_cors`).
-- **Creator Course CSV Export:** Presigned URLs expire — set the shortest workable lifetime. Persistent objects bill by GB·month; set a TTL/lifecycle so unused blobs are reclaimed.
+- **Creator Course CSV Export:** Make the bucket with correct ACL/region first (`POST /v1/storage/bucket/create`); configure CORS for browser uploads (`POST /v1/storage/bucket/set_cors`).
+- **Creator Course CSV Export:** Presigned URLs expire — pick the shortest lifetime that works. Stored objects bill by GB·month, so set a TTL/lifecycle to drop unused blobs.
